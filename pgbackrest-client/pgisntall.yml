@@ -1,0 +1,4 @@
+- hosts: pg-instances
+  roles:
+    - role: geerlingguy.postgresql
+      become: yes

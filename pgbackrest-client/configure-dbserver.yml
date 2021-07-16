@@ -1,0 +1,117 @@
+---
+- hosts:
+  - pg_instances
+  vars:
+    env: prod
+    pgbackrest_version: 2.34    
+  tasks:  
+  - name: create pgbackrest directories
+    ansible.builtin.file:
+      path: "{{ item.dest }}"
+      mode: "{{item.mode}}"
+      state: directory
+      owner: postgres
+      group: postgres
+    with_items:
+      - { dest: '/var/log/pgbackrest', mode: '0770'}
+      - { dest: '/etc/pgbackrest', mode: '0755'}
+      - { dest: '/etc/pgbackrest/conf.d', mode: '0755'}
+
+  - name: Add pgbackurest public key to authorized keys
+    ansible.posix.authorized_key:
+      user: postgres
+      state: present
+      key: '{{ item }}'
+    with_file:
+      - ../public_keys/pgbackrest-{{ env }}
+    
+  - name: Make sure psycopg2 is installed
+    apt:
+      name: python3-psycopg2
+      state: present    
+
+  - name: Find postgres version
+    become: yes
+    become_user: postgres   
+    community.postgresql.postgresql_info:
+      filter: version
+    register: pg_version
+  - debug: var=pg_version.version.major
+
+  - name: Find postgres data_directory
+    become: yes
+    become_user: postgres
+    community.postgresql.postgresql_query:
+      query: SHOW data_directory
+    register: result
+  - set_fact:
+      data_dir: "{{ result.query_result.0.data_directory }}"
+  - debug: var=data_dir
+
+  - name: Add pgbackrest configurations to postgresql.conf
+    ansible.builtin.lineinfile:
+      dest: /etc/postgresql/{{ pg_version.version.major }}/main/postgresql.conf 
+      regexp: "^{{ item.regexp }}"
+      line: "{{ item.line }}"
+    with_items:
+      - { regexp: "^#?listen_addresses =", line: "listen_addresses = '*'" }
+      - { regexp: "^#?wal_level = ", line: "wal_level = replica" }
+      - { regexp: "^#?archive_mode =", line: "archive_mode = on" }
+      - { regexp: "^#?archive_command =", line: "archive_command = '/usr/bin/pgbackrest --stanza={{ansible_hostname}} archive-push %p'" }
+      - { regexp: "^#?max_wal_senders =", line: "max_wal_senders = 10" }
+
+  - name: Configure pgbackrest.conf
+    community.general.ini_file:
+      path: /etc/pgbackrest/pgbackrest.conf 
+      section: "{{item.sec}}"
+      option: "{{item.line}}" 
+      value: "{{item.value}}"
+      no_extra_spaces: true      
+      mode: '0640'
+      owner: postgres
+      group: postgres
+    with_items:
+      - { line: "log-level-file", sec: "global", value: "detail" }
+      - { line: "repo1-host", sec: "global", value: "repository"} 
+      - { line: "pg1-path", sec: "{{ansible_hostname}}", value: "{{data_dir}}"}
+
+  - include_vars: "./vars/{{ env }}.yml"
+  - debug: msg="{{ env }} repositury IP is, {{ repository_ip }}!"
+  - name: Add repository host to /etc/hosts
+    ansible.builtin.lineinfile:
+      path: /etc/hosts
+      line: '{{repository_ip}} repository'
+      insertafter: 127.0.*
+
+  - name: generate ssh key-pair for postgres user
+    ansible.builtin.user:
+      name: postgres
+      generate_ssh_key: yes
+      ssh_key_bits: 4096
+      ssh_key_file: .ssh/id_rsa
+  
+  - name: copy postgres user public key to local file
+    ansible.builtin.fetch:
+      src: /var/lib/postgresql/.ssh/id_rsa.pub
+      dest: ../public_keys/{{ansible_hostname}}
+      flat: yes
+
+  - name: Get ECDSA key
+    shell: "ssh-keyscan -t ECDSA repository"
+    register: ssh_known_host_result
+    become_user: postgres
+    ignore_errors: yes
+    
+  - name: Add/update the public key in /var/lib/postgresql/.ssh/known_hosts
+    known_hosts:
+      name: "repository"
+      key: "{{ ssh_known_host_result.stdout }}"
+      path: "/var/lib/postgresql/.ssh/known_hosts"
+
+  - name: copy pgbackrest binary to server
+    ansible.builtin.copy:
+      src: ../binary/pgbackrest-{{pgbackrest_version}}-{{ansible_distribution_version}}
+      dest: /usr/bin/pgbackrest
+      owner: root
+      group: root
+      mode: '0755'
