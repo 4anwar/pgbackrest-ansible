@@ -3,7 +3,8 @@ Ansible playbooks to install and configure pgbackret Server and DB Servers.
 
 1. git pull repo
 2. build pgbackrest binaries for ubuntu version and copy to binaries directory
-3.
+3. Directory structuer
+
 ```bash 
 ├── binary
 │   ├── pgbackrest-2.34-16.04
@@ -28,7 +29,7 @@ Ansible playbooks to install and configure pgbackret Server and DB Servers.
    `ansible-galaxy collection install community.general`
 
    `ansible-galaxy collection install ansible.posix`
-   
+
 
 5. #Create ansible user with right key in authorized_keys
 
