@@ -4,21 +4,21 @@ Ansible playbooks to install and configure pgbackret Server and DB Servers.
 1. git pull repo
 2. build pgbackrest binaries for ubuntu version and copy to binaries directory
 3. 
-├── binary
-│   ├── pgbackrest-2.34-16.04
-│   └── pgbackrest-2.34-18.04
-├── inventory
-├── pgbackrest-client
-│   ├── configure-dbserver.yml
-│   ├── pgisntall.yml
-│   └── vars
-│       ├── prod.yml
-│       ├── stage.yml
-│       └── uat.yml
-├── pgbackrest-repository
-│   ├── configure-server.yml
-├── public_keys
-└── README.md
+  ├── binary
+  │   ├── pgbackrest-2.34-16.04
+  │   └── pgbackrest-2.34-18.04
+  ├── inventory
+  ├── pgbackrest-client
+  │   ├── configure-dbserver.yml
+  │   ├── pgisntall.yml
+  │   └── vars
+  │       ├── prod.yml
+  │       ├── stage.yml
+  │       └── uat.yml
+  ├── pgbackrest-repository
+  │   ├── configure-server.yml
+  ├── public_keys
+  └── README.md
 
 4. #Add ansible modules used by the playbooks
    ansible-galaxy collection install community.postgresql
