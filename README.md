@@ -31,14 +31,14 @@ Ansible playbooks to install and configure pgbackret Server and DB Servers.
    `ansible-galaxy collection install ansible.posix`
 
 
-5. #Create ansible user with right key in authorized_keys
+5. #reate ansible user with right key in authorized_keys
 
-6. #Change env variables in inventory and yml files
+6. Change env variables in inventory and yml files
 
-7. #Run playbook to setup pgbackrest repository server after updating the vars
+7. Run playbook to setup pgbackrest repository server after updating the vars
 
    `ansible-playbook -i inventory pgbackrest-repository/configure-server.yml  --check`
 
-8. #Run playbook to setup postgres db server for pgbackrest backup after updating the vars
+8. Run playbook to setup postgres db server for pgbackrest backup after updating the vars
 
    `ansible-playbook -i inventory pgbackrest-client/configure-dbserver.yml  --check`
