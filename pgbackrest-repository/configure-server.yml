@@ -1,0 +1,46 @@
+- hosts:
+  - pgbackrest_instance
+  vars:
+    env: prod
+    pgbackrest_version: 2.34
+  tasks:
+  - name: create pgbackrest user
+    ansible.builtin.user:
+      name: pgbackrest
+      comment: ""
+      shell: /bin/bash
+      generate_ssh_key: yes
+      ssh_key_bits: 4096
+      ssh_key_file: .ssh/id_rsa
+
+  - name: ansible copy ssh public key for pgbackrest user from remote to local.
+    ansible.builtin.fetch:
+      src: /home/pgbackrest/.ssh/id_rsa.pub
+      dest: ../public_keys/pgbackrest-{{ env }}
+      flat: yes
+
+  - name: create pgbackrest directories
+    ansible.builtin.file:
+      path: "{{ item.dest }}"
+      mode: "{{item.mode}}"
+      state: directory
+      owner: pgbackrest
+      group: pgbackrest
+    with_items:
+      - { dest: '/var/log/pgbackrest', mode: '0770'}
+      - { dest: '/etc/pgbackrest', mode: '0755'}
+      - { dest: '/etc/pgbackrest/conf.d', mode: '0755'}
+      - { dest: '/var/lib/pgbackrest', mode: '0750'}
+
+  - name: Make sure psycopg2 is installed
+    apt:
+      name: python3-psycopg2
+      state: present
+      
+  - name: copy pgbackrest binary to server
+    ansible.builtin.copy:
+      src: ../binary/pgbackrest-{{pgbackrest_version}}-{{ansible_distribution_version}}
+      dest: /usr/bin/pgbackrest
+      owner: root
+      group: root
+      mode: '0755'
