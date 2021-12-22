@@ -24,8 +24,11 @@ Ansible playbooks to install and configure pgbackret Server and DB Servers.
 4. Add ansible modules used by the playbooks
 
    `ansible-galaxy collection install community.postgresql`
+
    `ansible-galaxy collection install community.general`
+
    `ansible-galaxy collection install ansible.posix`
+   
 
 5. #Create ansible user with right key in authorized_keys
 
