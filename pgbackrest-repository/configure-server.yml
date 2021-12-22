@@ -31,11 +31,6 @@
       - { dest: '/etc/pgbackrest', mode: '0755'}
       - { dest: '/etc/pgbackrest/conf.d', mode: '0755'}
       - { dest: '/var/lib/pgbackrest', mode: '0750'}
-
-  - name: Make sure psycopg2 is installed
-    apt:
-      name: python3-psycopg2
-      state: present
       
   - name: copy pgbackrest binary to server
     ansible.builtin.copy:
