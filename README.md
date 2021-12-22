@@ -20,7 +20,7 @@ Ansible playbooks to install and configure pgbackret Server and DB Servers.
 │   ├── configure-server.yml
 ├── public_keys
 └── README.md
-
+```
 4. #Add ansible modules used by the playbooks
    ansible-galaxy collection install community.postgresql
    ansible-galaxy collection install community.general
